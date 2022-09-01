@@ -5,127 +5,150 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 public class Calculator extends JFrame {
-    //계산기의 출력부분을 생성
     private JTextField inputSpace;
-    private String num = "";
-    private ArrayList<String> equation = new ArrayList<String>();
-
-    public Calculator() {
+    private ArrayList<String > equation = new ArrayList<String >();
+    private String  num = "";
+    private String prev_operation = "";
+    public Calculator(){
         setLayout(null);
-
-        //계산기의 출력부분을 꾸미는 코드
         inputSpace = new JTextField();
         inputSpace.setEditable(false);
         inputSpace.setBackground(Color.WHITE);
-        inputSpace.setFont(new Font("Arial", Font.BOLD, 50));
+        inputSpace.setHorizontalAlignment(JTextField.RIGHT);
+        inputSpace.setFont(new Font("Arial", Font.BOLD,50));
         inputSpace.setBounds(15, 10, 270, 70);
-        add(inputSpace);
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(4, 4, 10, 10));
         buttonPanel.setBounds(15, 90, 270, 235);
 
-        String button_names[] = {"C", "/", "X", "=", "7", "8", "9", "+", "4", "5", "6", "-", "1", "2", "3", "0"};
+        String button_names[] = {"C", "/", "x", "=", "7", "8", "9", "+", "4", "5", "6", "-", "1", "2", "3", "0"};
         JButton buttons[] = new JButton[button_names.length];
 
-        for (int i = 0; i < button_names.length; i++) {
-            buttons[i] = new JButton(button_names[i]);
+        for(int i = 0; i < button_names.length; i++){
+            buttons[i] = new JButton (button_names[i]);
             buttons[i].setFont(new Font("Arial", Font.BOLD, 20));
-            if (button_names[i] == "C") {
+            if (button_names[i] == "C"){
                 buttons[i].setBackground(Color.RED);
-            } else if ((4 <= i && i <= 6) || (8 <= i && i <= 10) || (12 <= i && i < 14)) {
+            }else if((4 <= i || i <=6)&&(8 <= i || i <= 10)&&(12 <= i || i <= 14)){
                 buttons[i].setBackground(Color.BLACK);
-            } else {
+            }else{
                 buttons[i].setBackground(Color.GRAY);
             }
             buttons[i].setForeground(Color.WHITE);
             buttons[i].setBorderPainted(false);
-            buttonPanel.add(buttons[i]);
             buttons[i].setOpaque(true);
+            buttons[i].addActionListener(new PadActionListner());
+            buttonPanel.add(buttons[i]);
         }
-
+        add(inputSpace);
         add(buttonPanel);
 
-        //전체적인 창을 생성하고 꾸미는 코드
-        setTitle("계산기");
+
+        setTitle("계산가");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
         setSize(300, 370);
         setLocationRelativeTo(null);
         setResizable(false);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     }
-
-    class PadActionListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
+    class PadActionListner implements ActionListener{
+        public void actionPerformed(ActionEvent e){
             String operation = e.getActionCommand();
-            if (operation.equals("C")) {
+            if (operation.equals("C")){
                 inputSpace.setText("");
-            } else if (operation.equals("=")) {
+            }else if(operation.equals("=")) {
                 String result = Double.toString(calculate(inputSpace.getText()));
                 inputSpace.setText("" + result);
-                num ="";
-            } else {
+                num = "";
+            } else if(operation.equals("+") || operation.equals("-") || operation.equals("x") || operation.equals("/")) {
+                if(inputSpace.getText().equals("") && operation.equals("-")){
+                    inputSpace.setText(inputSpace.getText() + e.getActionCommand());
+                } else if(!inputSpace.getText().equals("") && !prev_operation.equals("+") && !prev_operation.equals("-") && !prev_operation.equals("x") && !prev_operation.equals("/")) {
+                    inputSpace.setText(inputSpace.getText() + e.getActionCommand());
+                }
+            }else {
                 inputSpace.setText(inputSpace.getText() + e.getActionCommand());
             }
+            prev_operation = e.getActionCommand();
         }
     }
 
-    private void fullTextParsing(String inputText) {
-        equation.clear(); // 저장된 숫자 삭제
+    private void fullTextParsing(String inputText){
+        equation.clear();
 
-        for (int i = 0; i < inputText.length(); i++) {
+        for(int i = 0; i < inputText.length(); i++){
             char ch = inputText.charAt(i);
-            if (ch == '-' || ch == '+' || ch == 'X' || ch == '/') {
-                equation.add(num);
-                num = "";
-                equation.add(ch + "");
-                //num="" / num="3"/ num="32"가 되고 연산기호가 나올 시 num은 ArrayList에 추가되고 초기화된다
-            } else {
-                num = num + ch;
-                //연산기호가 아닐 경우 그냥 num 문자열에 추가된다
+
+            if(ch == '+' || ch == '-' || ch == 'x' || ch == '/'){
+                equation.add(num); //ArrayList에 num 추가
+                num = ""; // num String 초기화
+                equation.add("" + ch); // ArrayList에 기호 추가
+            }else{
+                num += ch;  //num이 숫자일때는 그냥 num String에 ch 추가
             }
         }
-        equation.add(num); // 반복문이 끝나고 최종의 num도 ArrayList에 추가
+        equation.add(num); // 최종적으로 num을 ArrayList에 추가
+        equation.remove(""); // 맨처음 연산자가 -로 나올때 ""가 추가되므로 ""를 지워주는 코드
     }
 
-    public double calculate(String inputText) {
+    public double calculate(String inputText){
         fullTextParsing(inputText);
 
         double prev = 0;
         double current = 0;
-        String mode = "";
+        String mode ="";
 
-        for (String s : equation) {   //for(A:B)는 B에서 객체를 꺼내서 A에 넣는다는 얘기
-            if (s.equals("+")) {
+        for(int i = 0; i < equation.size(); i++){
+            String s = equation.get(i);
+            if(s.equals("+")){
                 mode = "add";
-            } else if (s.equals("-")) {
+            }else if(s.equals("-")){
                 mode = "sub";
-            } else if (s.equals("*")) {
+            }else if(s.equals("x")){
                 mode = "mul";
-            } else if (s.equals("/")) {
+            }else if(s.equals("/")){
                 mode = "div";
-            } else {
+            }else {
+                if((mode.equals("mul") || mode.equals("div")) && !s.equals("+") && !s.equals("-") && !s.equals("x") && !s.equals("/")){
+                    Double one = Double.parseDouble(equation.get(i - 2));
+                    Double two = Double.parseDouble(equation.get(i));
+                    Double result = 0.0;
+                    if (mode.equals("mul")){
+                        result = one * two;
+                    }else if(mode.equals("div")){
+                        result = one / two;
+                    }
+                    equation.add(i + 1, Double.toString(result));
+                    for(int j = 0; j < 3; j++){
+                        equation.remove(i - 2);
+                    }
+                    i -= 2;
+                }
+            }
+        }
+        for (String s : equation){
+            if(s.equals("+")){
+                mode = "add";
+            }else if(s.equals("-")){
+                mode = "sub";
+            }else {
                 current = Double.parseDouble(s);
-                if (mode == "add") {
+                if (mode == "add"){
                     prev += current;
-                }else if (mode == "sub"){
+                }else if(mode == "sub"){
                     prev -= current;
-                }else if (mode == "mul"){
-                    prev *= current;
-                }else if (mode == "div"){
-                    prev /= current;
-                }else{
+                }else {
                     prev = current;
                 }
             }
+            prev = Math.round(prev * 100000) / 100000.0;
         }
         return prev;
     }
 
-
     public static void main(String[] args) {
         new Calculator();
-
     }
 }
